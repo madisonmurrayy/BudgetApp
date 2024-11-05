@@ -1,0 +1,156 @@
+﻿@page "/counter"
+@using BlazorLogic
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Counter</h1>
+
+<p role="status">Current count: @currentCount</p>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+
+<input type="text" @bind="totalBudget" placeholder="enter total budget" />
+<p role="status">Current Budget: @totalBudget</p>
+<button class="btn btn-primary" @onclick="DisplayTotalBudget">Click me to update the budget</button>
+
+<!-- Button to trigger modal -->
+<button @onclick="ShowModal">Open Modal</button>
+
+<!-- Modal Popup -->
+@if (showModal)
+{
+    <div class="modal-overlay">
+        <div class="modal">
+            
+            <h4>Enter Your Information</h4>
+
+            <div>
+                <label for="SpecificCategory">Specific Category:</label>
+                <input type="text" id="SpecificCategoryInput" @bind="enteredSpecific" />
+            </div>
+
+            <div>
+                <label for="Amount Spent">Amount Spent:</label>
+                <input type="text" id="AmountSpentInput" @bind="enteredCost" />
+            </div>
+
+            <div>
+                <label for="dropdown">Choose Option:</label>
+                <select id="dropdown" @bind="selectedCategory">
+                    @foreach (var category in thisBudget.getCategories())
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+
+            <div>
+                <button @onclick="SubmitForm">Enter</button>
+                <button @onclick="HideModal">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private int totalBudget = 0;
+    private int currentCount = 0;
+    Budget thisBudget = new Budget(0);
+
+
+    private void DisplayTotalBudget()
+    {
+        thisBudget = new Budget(totalBudget);
+
+    }
+
+    private void IncrementCount()
+    {
+        currentCount++;
+    }
+
+    private bool showModal = false;
+    private double enteredCost =0;
+    private string enteredSpecific = string.Empty;
+    private string enteredNewCategory = string.Empty;
+    private string selectedCategory = string.Empty;
+
+    //show modal
+    private void ShowModal()
+    {
+        showModal = true;
+        StateHasChanged();
+    }
+
+    //hids modal
+    private void HideModal()
+    {
+        showModal = false;
+    }
+
+    //submit info in the modal
+    private void SubmitForm()
+    {
+        //HANDLE ENTERED INFO HERE
+
+        showModal = false;
+    }
+}
+<style>
+    /* Modal overlay (darkened background) */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000; /* Ensure modal appears on top */
+    }
+
+    /* Modal box style */
+    .modal {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 300px;
+        max-width: 80%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1001; /* Ensure modal content is above the overlay */
+        visibility: visible; /* Ensure modal is not hidden */
+        display: block; /* Ensure it's displayed when the modal is active */
+    }
+
+        /* Modal input fields and select dropdown */
+        .modal input, .modal select {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+
+        /* Modal buttons */
+        .modal button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            .modal button:hover {
+                background-color: #0056b3;
+            }
+
+            .modal button:focus {
+                outline: none;
+            }
+</style>
