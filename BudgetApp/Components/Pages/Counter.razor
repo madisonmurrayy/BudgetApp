@@ -17,6 +17,15 @@
 <!-- Button to trigger modal -->
 <button @onclick="ShowModal">Open Modal</button>
 
+<div class="dictionary-container">
+    @foreach(var kvp in this.DisplayCategories())
+    {
+        <div class="dictionary-item">
+            <div class="key">@kvp.Key</div>
+            <div class="value">@kvp.Value</div>
+        </div>
+    }
+</div>
 <!-- Modal Popup -->
 @if (showModal)
 {
@@ -54,10 +63,18 @@
 }
 
 
-@code {
-    private int totalBudget = 0;
-    private int currentCount = 0;
-    Budget thisBudget = new Budget(0);
+    @code {
+        private double totalBudget = 0;
+        private int currentCount = 0;
+        Budget thisBudget = new Budget(0);
+        private Dictionary<string, double> DisplayCategories()
+        {
+            return thisBudget.GetCategories();
+        }
+        private Dictionary<string, double> DisplaySpecifics()
+        {
+            return thisBudget.GetSpecifics();
+        }
 
 
     private void DisplayTotalBudget()
@@ -94,7 +111,18 @@
     private void SubmitForm()
     {
         //HANDLE ENTERED INFO HERE
+        if(selectedCategory == "new category")
+        {
+            thisBudget.Spend(enteredNewCategory, enteredSpecific, enteredCost);
 
+
+        }
+        else
+        {
+            thisBudget.Spend(selectedCategory, enteredSpecific, enteredCost);
+
+        }
+        totalBudget = thisBudget.BudgetLeft;
         showModal = false;
     }
 }
@@ -153,4 +181,51 @@
             .modal button:focus {
                 outline: none;
             }
+
+    .dictionary-container {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 15px;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .dictionary-item {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s ease-in-out;
+    }
+
+        .dictionary-item:hover {
+            transform: scale(1.05);
+        }
+
+    .key {
+        font-weight: bold;
+        color: #2c3e50;
+        font-size: 1.1em;
+    }
+
+    .value {
+        margin-left: 10px;
+        color: #34495e;
+        font-size: 1em;
+    }
+
+    h3 {
+        text-align: center;
+        color: #34495e;
+        font-family: 'Arial', sans-serif;
+        margin-bottom: 20px;
+    }
+
 </style>

@@ -13,11 +13,19 @@
     /// </summary>
     public class Budget
     {
-        private double BudgetLeft;
+        public double BudgetLeft;
         private Dictionary<string, double> categories;//general categories:food, gas, misc, clothes, rent, ect
         private Dictionary<string, double> specifics;//more specifics: movies, cafe rio, electric bill, ect
         private List<string> categoriesList;
 
+        public Dictionary<string, double> GetCategories()
+        {
+            return categories;
+        }
+        public Dictionary<string, double> GetSpecifics()
+        {
+            return specifics;
+        }
 
         public Budget(double totalBudget)
         {
@@ -35,6 +43,9 @@
             categories.Add("rent", 0);
             categories.Add("gas", 0);
             categories.Add("savings", 0);
+            categories.Add("new category", 0);
+            categoriesList.Add("new category");
+
 
         }
 
@@ -78,8 +89,9 @@
             }
             else
             {
-                specifics.Add(categorySpecific, amount);
 
+                specifics.Add(categorySpecific, amount);
+                
                 //specific added
                 return true;
             }
