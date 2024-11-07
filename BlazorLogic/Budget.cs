@@ -1,4 +1,6 @@
-﻿namespace BlazorLogic
+﻿using System.Runtime.CompilerServices;
+
+namespace BlazorLogic
 {
     /// <summary>
     /// 
@@ -16,6 +18,9 @@
         public double BudgetLeft;
         private Dictionary<string, double> categories;//general categories:food, gas, misc, clothes, rent, ect
         private Dictionary<string, double> specifics;//more specifics: movies, cafe rio, electric bill, ect
+        public Dictionary<string, List<string>> linkingCategories;
+        public Dictionary<string, string> specificToGeneral; //backwards linking
+        
         private List<string> categoriesList;
 
         public Dictionary<string, double> GetCategories()
@@ -32,6 +37,8 @@
             BudgetLeft = totalBudget;
             categories = new Dictionary<string, double>();
             specifics = new Dictionary<string, double>();
+            specificToGeneral = new Dictionary<string, string>();
+            linkingCategories = new Dictionary<string,  List<string>>();
             categoriesList = new List<string>();
             categories.Add("food", 0);
             categoriesList.Add("food");
@@ -55,6 +62,30 @@
             
             return this.categoriesList;
         }
+        public void ReMap(string newGenCategory, string specific, double amount, bool reassigning)
+        {
+            if (reassigning)
+            {
+                if (specificToGeneral.TryGetValue(specific, out var oldCategory))
+                {
+                    linkingCategories.TryGetValue(oldCategory, out List<string> OldSpecificList);
+                    OldSpecificList.Remove(specific);
+                    //reassign this specific variable to the new category
+                    oldCategory = newGenCategory;
+                    //linking categories hasnt added this new expense specific
+                    Spend(newGenCategory, specific, amount);
+                }
+            }
+            else
+            {
+                if (specificToGeneral.TryGetValue(specific, out var oldCategory))
+                {
+                    //they just chose the old category, dont need to remap, just recall spend with a new category
+                    Spend(oldCategory, specific, amount);
+                }
+                    
+            }
+        }
         /// <summary>
         /// 
         /// return true if there is a new category added
@@ -64,8 +95,48 @@
         /// <returns></returns>
         public bool Spend(string categoryGeneral, string categorySpecific, double amount)
         {
-            //update the budget left
-            BudgetLeft -= amount;
+            //this category exists in the linking dictionary
+            if (linkingCategories!.TryGetValue(categoryGeneral, out List<string> sepcificsOut))
+            {
+                //add this specific expense to the list of expenses for this general category
+                if(sepcificsOut != null)
+                {
+                    //if this specific category isnt mapped to any amount we can add it no problem
+                    if (!specifics.ContainsKey(categorySpecific)){
+                        sepcificsOut.Add(categorySpecific);
+                    }
+                    //THIS HANDLES THE SAME SPECIFIC CATEGORY IN TWO DIFFERENT CATEGORIES
+                    //this specific category is mapped to an amount, lets see if it is under this category
+                    else if (!sepcificsOut.Contains(categorySpecific))
+                    {
+                        //oh no we used this specific category in another broad category!
+                        //return false and continue...
+                        //NOTHING HAPPENS - RECALL THIS METHOD WITH A MODIFICATION
+                        //either we will re-map this specific and amount to a new general category (remove from the specifics
+                        //list in the old category and add to the specifics list in the new category - dont add new amount yet)
+                        return false;
+                    }
+                    else
+                    {
+                        //specifics list contains this. we willnot add to list
+                    }
+
+                }
+                // return false;
+            }
+            else if (specificToGeneral.ContainsKey(categorySpecific))
+            {
+                return false;
+            }
+            //this category has zero specifics so far. lets start a list!
+            else
+            {
+                linkingCategories.Add(categoryGeneral, new List<string> {categorySpecific});
+                specificToGeneral.Add(categorySpecific, categoryGeneral);
+                // return true;
+            }
+
+            
 
             //BROAD CATEGORIES FIRST
             //this category exists in the dictionary
@@ -85,7 +156,7 @@
             {
                 specifics[categorySpecific] = currentSpecifics+ amount;
                 //no new specific added
-                return false;
+                //return false;
             }
             else
             {
@@ -93,9 +164,11 @@
                 specifics.Add(categorySpecific, amount);
                 
                 //specific added
-                return true;
+                //return true;
             }
-
+            //update the budget left
+            BudgetLeft -= amount;
+            return true;
         }
 
 

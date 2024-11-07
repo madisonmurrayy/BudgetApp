@@ -20,12 +20,98 @@
 <div class="dictionary-container">
     @foreach(var kvp in this.DisplayCategories())
     {
-        <div class="dictionary-item">
+        <div class="dictionary-item" @onclick="() => DisplaySpecific(kvp.Key)">
             <div class="key">@kvp.Key</div>
             <div class="value">@kvp.Value</div>
         </div>
     }
 </div>
+
+<!-- Enter a new category modal popup-->
+@if(specificModal){
+ <div class="modal-overlay">
+     <div class="modal">
+        <h4>@CategoryViewing</h4>
+            <div class="dictionary-container">
+                <!--loops through the list of specific categories linked to this general category-->
+                @if(this.GetLinkningCategories().TryGetValue(CategoryViewing, out List<string> specificsList)){
+                    
+                
+                @foreach (var specificCategory in specificsList)
+                {
+                    
+                    <div class="dictionary-item" >
+                        <div class="key">@specificCategory</div>
+                        <div class="value">@this.GetCost(specificCategory)</div>
+                    </div>
+                }
+                }
+            </div>
+        <div>
+            <button @onclick="CloseSpecific">Close</button>
+        </div>
+     </div>
+ </div>
+}
+@code{
+    private void CloseSpecific()
+    {
+        specificModal = false;
+    }
+    private Dictionary<string,List<string>> GetLinkningCategories()
+    {
+        return thisBudget.linkingCategories;
+    }
+}
+<!-- View specifics modal popup-->
+@if(showModalNewCategory){
+ <div class="modal-overlay">
+     <div class="modal">
+        <h4>Enter Your New Category</h4>
+        <div>
+            <label for="NewGenericCategory">New General Category:</label>
+            <input type="text" id="NewGenericCategoryInput" @bind="enteredNewCategory" />
+        </div>
+        <div>
+            <button @onclick="AddNewCategory">Add</button>
+        </div>
+     </div>
+ </div>
+}
+
+<!-- View specifics modal popup-->
+@if (reassignModal)
+{
+    <div class="modal-overlay">
+        <div class="modal">
+            <h4>The specific cost you entered belongs to a different category. Do you want to keep it in the old category or 
+                move it to this new category?
+            </h4>
+            
+            <div>
+                <button @onclick="Recall">OldCategory</button>
+                <button @onclick="Reassign">ThisCategory</button>
+
+            </div>
+        </div>
+    </div>
+}
+@code{
+    private void Recall()
+    {
+
+        string oldCat = "placeholder";
+        thisBudget.ReMap(oldCat, enteredSpecific, enteredCost, false);
+        reassignModal = false;
+        HideModal();
+    }
+    private void Reassign()
+    {
+        thisBudget.ReMap(selectedCategory, enteredSpecific, enteredCost, true);
+        reassignModal = false;
+        HideModal();
+    }
+}
 <!-- Modal Popup -->
 @if (showModal)
 {
@@ -63,20 +149,30 @@
 }
 
 
-    @code {
-        private double totalBudget = 0;
-        private int currentCount = 0;
-        Budget thisBudget = new Budget(0);
-        private Dictionary<string, double> DisplayCategories()
-        {
-            return thisBudget.GetCategories();
-        }
-        private Dictionary<string, double> DisplaySpecifics()
-        {
-            return thisBudget.GetSpecifics();
-        }
+@code {
+    private string CategoryViewing = string.Empty;
+    private double totalBudget = 0;
+    private int currentCount = 0;
+    Budget thisBudget = new Budget(0);
+    private bool specificModal = false;
+    private Dictionary<string, double> DisplayCategories()
+    {
+        return thisBudget.GetCategories();
+    }
+    private Dictionary<string, double> DisplaySpecifics()
+    {
+        return thisBudget.GetSpecifics();
+    }
 
-
+    private double GetCost(string categorySpecific)
+    {
+        return thisBudget.GetSpecifics().GetValueOrDefault(categorySpecific);
+    }
+    private void DisplaySpecific(string general)
+    {
+        CategoryViewing = general;
+        specificModal = true;
+    }
     private void DisplayTotalBudget()
     {
         thisBudget = new Budget(totalBudget);
@@ -88,11 +184,26 @@
         currentCount++;
     }
 
+    private bool reassignModal = false;
     private bool showModal = false;
+    private bool showModalNewCategory = false;
     private double enteredCost =0;
     private string enteredSpecific = string.Empty;
     private string enteredNewCategory = string.Empty;
     private string selectedCategory = string.Empty;
+
+
+    //show when a new category is selected
+    private void ShowNewCategory()
+    {
+        showModalNewCategory = true;
+    }
+
+    //close when a new category is entered
+    private void HideNewCategory()
+    {
+        showModalNewCategory = false;
+    }
 
     //show modal
     private void ShowModal()
@@ -105,24 +216,53 @@
     private void HideModal()
     {
         showModal = false;
+        enteredCost = 0;
+        enteredSpecific = string.Empty;
+        enteredNewCategory = string.Empty;
+        selectedCategory = "personal";
+        totalBudget = thisBudget.BudgetLeft;
     }
 
+    private void AddNewCategory()
+    {
+        thisBudget.Spend(enteredNewCategory, enteredSpecific, enteredCost);
+        showModalNewCategory = false;
+        StateHasChanged();
+    }
     //submit info in the modal
     private void SubmitForm()
     {
         //HANDLE ENTERED INFO HERE
+        if(enteredSpecific == string.Empty)
+        {
+            enteredSpecific = "Unspecified"; 
+        }
         if(selectedCategory == "new category")
         {
-            thisBudget.Spend(enteredNewCategory, enteredSpecific, enteredCost);
+            showModalNewCategory = true;
+            //thisBudget.Spend(enteredNewCategory, enteredSpecific, enteredCost);
 
 
         }
         else
         {
-            thisBudget.Spend(selectedCategory, enteredSpecific, enteredCost);
+            //if this budget needs to reassign, prompt the user
+            if(!(thisBudget.Spend(selectedCategory, enteredSpecific, enteredCost)))
+            {
+                reassignModal = true;
+                //prompt new modal 
+                //options: a) reassign this specific varaible to a new category(true)
+                //b) choose the old category(false)
+
+            }
 
         }
         totalBudget = thisBudget.BudgetLeft;
+        if(reassignModal == false)
+        {
+            HideModal();
+
+        }
         showModal = false;
     }
 }
